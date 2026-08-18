@@ -75,18 +75,18 @@
                         @if (isset($p->karyawan))
                         <tr>
                             <td>{{$i}}</td>
-                            <td>{{$p->karyawan->user->name}}</td>
-                            <td>{{$p->karyawan->departemen->nama_departemen}}</td>
-                            <td>{{$p->karyawan->jabatan->nama_jabatan}}</td>
-                            <td>{{$p->formPenilaian->nama_form_penilaian}}</td>
+                            <td>{{$p->karyawan->user->name ?? '-'}}</td>
+                            <td>{{$p->karyawan->departemen->nama_departemen ?? '-'}}</td>
+                            <td>{{$p->karyawan->jabatan->nama_jabatan ?? '-'}}</td>
+                            <td>{{$p->formPenilaian->nama_form_penilaian ?? '-'}}</td>
                             <td>{{$p->waktu_penilaian}}</td>
-                            <td>{{\Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $p->periode_penilaian)->format('F')}}
+                            <td>{{ !empty($p->periode_penilaian) ? \Carbon\Carbon::parse($p->periode_penilaian)->format('F') : '-' }}
                             </td>
                             <td>{{$p->nilai_skor}}</td>
                             <td>{{$p->nama_penilai}}</td>
                             <td style="text-align:center;">
                                 <button class="btn btn-success waves-effect waves-light btn-detil" data-toggle="modal"
-                                    data-target="#modalnilai" data-idform="{{$p->formPenilaian->idform_penilaian}}"
+                                    data-target="#modalnilai" data-idform="{{$p->formPenilaian->idform_penilaian ?? $p->form_penilaian_idtable1}}"
                                     data-id="{{$p->id_penilaian}}"> <i class="fa fa-plus"></i> Nilai</button>
                                 {{-- <button type="button" class="btn btn-warning waves-effect waves-light btn-edit"  data-toggle="modal" data-target="#modalubah" data-id="{{ $p->id_penilaian }}">
                                 <i class="fa fa-edit"></i> Update</button> --}}
@@ -105,7 +105,7 @@
                             <td>{{$p->nama_jabatan}}</td>
                             <td>{{$p->nama_form_penilaian}}</td>
                             <td>{{$p->waktu_penilaian}}</td>
-                            <td>{{\Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $p->periode_penilaian)->format('F')}}
+                            <td>{{ !empty($p->periode_penilaian) ? \Carbon\Carbon::parse($p->periode_penilaian)->format('F') : '-' }}
                             </td>
                             <td>{{$p->nilai_skor}}</td>
                             <td>{{$p->nama_penilai}}</td>

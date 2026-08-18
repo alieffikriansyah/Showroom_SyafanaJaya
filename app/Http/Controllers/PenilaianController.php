@@ -69,56 +69,37 @@ class PenilaianController extends Controller
         $request->user();
         $paths = explode('-', $request->query('date'));
 
-        $months = date('m');
-        $years = date('Y');
+        $months = (int) date('m');
+        $years = (int) date('Y');
 
         if (count($paths) > 1) {
-            $months = (int)$paths[1];
-            $years = (int)$paths[0];
+            $months = (int) $paths[1];
+            $years = (int) $paths[0];
         }
 
-        $penilaian = Penilaian::all();
+        $formPenilaian = formPenilaian::all();
+        $karyawan = karyawan::all();
 
-        $formPenilaian = DB::select('
-            SELECT idform_penilaian,nama_form_penilaian
-            FROM form_penilaian
-            
-        ');
-        // $karyawan = DB::select('
-        //     SELECT nama, nama_departemen, nama_jabatan, id_karyawan
-        //     FROM karyawan
-        //     INNER JOIN departemen on karyawan.departemen_id_departemen = departemen.id_departemen
-        //     INNER JOIN jabatan on karyawan.jabatan_id_jabatan = jabatan.id_jabatan
-        // ');
-        $karyawan = Karyawan::all();
-
-
-        // var_dump($months, $years);
         $days_in_month = cal_days_in_month(CAL_GREGORIAN, $months, $years);
 
         $arrDays = [];
         $arrTimes = [];
 
-        $tempDate = date_create($years . "-" . $months);
+        $tempDate = date_create($years . "-" . $months . "-01");
         array_push($arrDays, date_format($tempDate, "l, jS F Y"));
         array_push($arrTimes, $tempDate->format('Y-m-d'));
 
-        $penilaianPerMonth = DB::select('
-            SELECT nama_form_penilaian, name, nama_departemen, nama_jabatan, id_penilaian, waktu_penilaian, periode_penilaian, nilai_skor, nama_penilai, form_penilaian_idtable1
-            FROM penilaian
-            INNER JOIN karyawan ON penilaian.karyawan_id_karyawan = karyawan.id_karyawan
-            INNER JOIN users ON karyawan.user_id_user = users.id
-            INNER JOIN departemen on karyawan.departemen_id_departemen = departemen.id_departemen
-            INNER JOIN jabatan on karyawan.jabatan_id_jabatan = jabatan.id_jabatan
-            INNER JOIN form_penilaian ON penilaian.form_penilaian_idtable1 = form_penilaian.idform_penilaian
-            AND MONTH(waktu_penilaian) = MONTH(?) 
-            AND YEAR(waktu_penilaian) = YEAR(?)
-        ', [$tempDate, $tempDate]);
+        $penilaianQuery = penilaian::with(['karyawan.user', 'karyawan.departemen', 'karyawan.jabatan', 'formPenilaian'])
+            ->whereMonth('waktu_penilaian', $months)
+            ->whereYear('waktu_penilaian', $years);
 
-        // var_dump($penilaianPerMonth);
+        if (Auth::user()->karyawan) {
+            $penilaianQuery->where('karyawan_id_karyawan', Auth::user()->karyawan->id_karyawan);
+        }
 
-        $penilaian = $penilaianPerMonth;
-        return view('penilaian', compact('penilaian', 'days_in_month', 'months', 'years', 'arrDays', 'arrTimes', 'penilaianPerMonth', 'karyawan', 'formPenilaian'));
+        $penilaian = $penilaianQuery->get();
+
+        return view('penilaian', compact('penilaian', 'days_in_month', 'months', 'years', 'arrDays', 'arrTimes', 'karyawan', 'formPenilaian'));
     }
 
     public function tambah_penilaian(Request $request)
