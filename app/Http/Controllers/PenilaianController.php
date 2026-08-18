@@ -275,22 +275,12 @@ class PenilaianController extends Controller
     {
         // dd($request);
         
-        $requestBody = explode('&', $request->getContent());
-        // dd($requestBody);
-      
+        $id_penilaian_nilai = $request->input('id_penilaian_nilai');
         $result = 0;
 
-        $id_penilaian_nilai;
-
-        foreach ($requestBody as $key) {
-            if (str_contains($key, 'nilai_detail')) {
-                // dd(explode("=", $key));
-               
-                $result += explode("=", $key)[1];
-            }
-
-            if (str_contains($key, 'id_penilaian_nilai')) {
-                $id_penilaian_nilai = explode("=", $key)[1];
+        foreach ($request->all() as $key => $val) {
+            if (strpos($key, 'nilai_detail') !== false) {
+                $result += (float) $val;
             }
         }
 
