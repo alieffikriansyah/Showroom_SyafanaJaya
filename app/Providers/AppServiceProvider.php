@@ -14,7 +14,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        spl_autoload_register(function ($class) {
+            if (strpos($class, 'App\\') === 0) {
+                $relative = substr($class, 4);
+                if (!strpos($relative, '\\')) {
+                    $candidates = [
+                        app_path($relative . '.php'),
+                        app_path(lcfirst($relative) . '.php'),
+                        app_path(strtolower($relative) . '.php'),
+                    ];
+                    foreach ($candidates as $file) {
+                        if (file_exists($file)) {
+                            require_once $file;
+                            return;
+                        }
+                    }
+                }
+            }
+        });
     }
 
     /**
