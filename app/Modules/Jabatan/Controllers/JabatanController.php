@@ -26,10 +26,10 @@ class JabatanController extends Controller
         $request->user();
         
         $jabatan = Jabatan::all();
-        // dd($jabatan);
 
         return view('jabatan', compact('jabatan'));
     }
+
     public function tambah_jabatan(Request $request)
     {
         DB::beginTransaction();
@@ -45,14 +45,33 @@ class JabatanController extends Controller
 
             $jabatan->save();
 
+            // Default: berikan hak akses seluruh menu modul KECUALI menu admin
+            $adminRoutes = ['admin', 'log', 'menu_sistem.index'];
+            $nonAdminMenuIds = DB::table('menu_sistem')
+                ->whereNotIn('route_name', $adminRoutes)
+                ->pluck('id_menu')
+                ->toArray();
+
+            $pivotRows = [];
+            foreach ($nonAdminMenuIds as $mId) {
+                $pivotRows[] = [
+                    'jabatan_id_jabatan' => $jabatan->id_jabatan,
+                    'menu_id_menu'       => $mId,
+                ];
+            }
+
+            if (!empty($pivotRows)) {
+                DB::table('jabatan_menu')->insert($pivotRows);
+            }
+
             DB::commit();
             return back()->with('success', 'Data jabatan baru telah berhasil ditambahakan');
         } catch (Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Oops Sepertinya ada masalah pada sistem\n\nPesan error: '.$e);
         }
-      
     }
+
     public function get_ubah_jabatan($id_jabatan)
     {
         $jabatan = Jabatan::find($id_jabatan);   
@@ -62,19 +81,9 @@ class JabatanController extends Controller
 
         exit;
     }
+
     public function ubah_jabatan(Request $request)
     {
-
-        // $validator = Validator::make($request->all(),[
-        //     'nama_jabatan'=>'required',
-        //     'nilai_bonus_gaji_ubah'=> 'required|numeric|min:0|max:100',
-        // ]);
-
-        // if($validator->fails()){
-        //     // dd(['error'=>$validator->errors()->all()]);
-        //     return response()->json(['error'=>$validator->errors()->all()]);
-        // }
-
         DB::beginTransaction();
         try {
             \App\Modules\Log\Models\log::create([
@@ -94,10 +103,10 @@ class JabatanController extends Controller
             DB::rollBack();
             return back()->with('error', 'Oops Sepertinya ada masalah pada sistem\n\nPesan error: '.$e);
         }
-        }
+    }
+
     public function hapus_jabatan($id_jabatan)
     {
-        
         DB::beginTransaction();
         try {
             \App\Modules\Log\Models\log::create([
@@ -105,6 +114,10 @@ class JabatanController extends Controller
                 'aksi' => 'Hapus Jabatan',
                 'fitur' => 'jabatan'
             ]);
+
+            // Hapus juga relasi menu jabatan
+            DB::table('jabatan_menu')->where('jabatan_id_jabatan', $id_jabatan)->delete();
+
             Jabatan::find($id_jabatan)->delete();
             
             DB::commit();
